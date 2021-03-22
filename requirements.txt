@@ -2,4 +2,5 @@ Flask==1.1.2
 pycryptodome
 scrypt
 cryptography~=3.4.6
+boto3
 
