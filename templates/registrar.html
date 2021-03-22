@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="row">
+	<div class="col-md-2"></div>
+	    <div class="col-md-8 text-center">
+				
+	          <form action="" method="post" enctype="multipart/form-data">
+                  <h4 class="w-100 font-weight-bold">Registro de usuario</h4>
+	              <div >
+	                <label data-error="wrong" data-success="right" for="correo">Direcci&oacute;n de correo</label>
+	                <input type="text" name="correo" id="correo" class="form-control validate">
+	              </div>
+	              
+	              <div style="margin-top:20px">
+	                <label data-error="wrong" data-success="right" for="cont1">Contrase&ntilde;a</label>
+	                <input type="password" name="cont1" id="cont1" class="form-control validate">
+	              </div>
+                  <div style="margin-top:20px">
+	                <label data-error="wrong" data-success="right" for="cont2">Repite contrase&ntilde;a</label>
+	                <input type="password" name="cont2" id="cont2" class="form-control validate">
+	              </div>
+	            <div class="d-flex justify-content-center" >
+	              <input style="margin-top:20px" type="submit" value="Registrarse" class="btn btn-success">
+	            </div>
+	
+	        </form>
+	
+	    </div>
+    <div class="col-md-2"></div>
+</div>
+<br/>
+<br/>
+<br/>
+
+
+{% endblock content %}
+
+{% block javascript%}
+	        {% if not datos.ok%}
+              alert("Contraseña equivocada");
+            {% endif %}
+{% endblock javascript%}
