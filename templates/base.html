@@ -32,12 +32,21 @@
         <li class="nav-item">
             <a class="nav-link active" style="color:white;" href="/"> <img src="{{ url_for('static', filename='icons/keys-icon.png') }}" style="margin-right:6px;width:28px;"> <b>App EDR</b></a>
         </li>
+          {% if not session['usuario'] %}
           <li class="nav-item">
-            <a class="nav-link" href="/registrar"><i class="fas fa-user"></i> Iniciar Sesi&oacute;n</a>
+            <a class="nav-link" href="/iniciarSesion"><i class="fas fa-user-plus"></i> Iniciar Sesi&oacute;n</a>
           </li>
           <li class="nav-item">
+            <a class="nav-link" href="/registrar"><i class="fas fa-sign-in-alt"></i> Registrarse</a>
+          </li>
+          {% else %}
+          <li class="nav-item">
             <a class="nav-link" href="/listar"><i class="fas fa-list"></i> Listar Ficheros</a>
-        </li>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/salir"><i class="fas fa-sign-out-alt"></i> Salir</a>
+          </li>
+          {% endif %}
       </ul>
     </div>
   </div>
@@ -61,7 +70,7 @@
 
 	$(document).ready(function(){
 		{% block javascript%}
-	    
+
 	    {% endblock javascript%}
 	});
 

@@ -2,5 +2,6 @@ Flask==1.1.2
 pycryptodome
 scrypt
 cryptography~=3.4.6
+pymongo~=3.11.3
+dnspython
 boto3
-
