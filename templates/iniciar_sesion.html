@@ -13,8 +13,8 @@
 	              </div>
 
 	              <div>
-	                <label data-error="wrong" data-success="right" for="defaultForm-pass">Contrase&ntilde;a</label>
-	                <input type="password" name="pass" id="defaultForm-pass" class="form-control validate">
+	                <label data-error="wrong" data-success="right" for="pass">Contrase&ntilde;a</label>
+	                <input type="password" name="pass" id="pass" class="form-control validate">
 	              </div>
 
 
@@ -33,7 +33,7 @@
 {% endblock content %}
 
 {% block javascript%}
-	        {% if datos.ok%}
-              alert("Contraseña equivocada");
+	        {% if datos.ok == False%}
+              alert("{{datos.msg}}");
             {% endif %}
 {% endblock javascript%}
