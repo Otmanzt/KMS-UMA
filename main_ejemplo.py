@@ -10,24 +10,19 @@ import shutil
 import base64
 import boto3
 
-def create_cmk(description):
-    """Creates a KMS Customer Master Key
+def create_key_client(password):
 
-    Description is used to differentiate between CMKs.
-    """
+    key = pbkdf2(password, "df1f2d3f4d77ac66e9c5a6c3d8f921b6", 1024, hash-function, derived-key-len)
 
-    kms_client = boto3.client("kms", region_name="eu-central-1", aws_access_key_id='AKIAZ55ECWRK6Y7N4PPW', aws_secret_access_key= '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')
-    response = kms_client.create_key(Description=description)
-
-    # Return the key ID and ARN
-    return response["KeyMetadata"]["KeyId"], response["KeyMetadata"]["Arn"]
+    f = Fernet()
+    return f.encrypt(password)
 
 def retrieve_cmk(description):
     """Retrieve an existing KMS CMK based on its description"""
 
     # Retrieve a list of existing CMKs
     # If more than 100 keys exist, retrieve and process them in batches
-    kms_client = boto3.client('kms', region_name="eu-central-1", aws_access_key_id='AKIAZ55ECWRK6Y7N4PPW', aws_secret_access_key= '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')
+    kms_client = boto3.client('kms')
     response = kms_client.list_keys()
 
     for cmk in response["Keys"]:
@@ -42,7 +37,7 @@ def create_data_key(cmk_id, key_spec="AES_256"):
     """Generate a data key to use when encrypting and decrypting data"""
 
     # Create data key
-    kms_client = boto3.client("kms", region_name="eu-central-1", aws_access_key_id='AKIAZ55ECWRK6Y7N4PPW', aws_secret_access_key= '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')
+    kms_client = boto3.client("kms")
     response = kms_client.generate_data_key(KeyId=cmk_id, KeySpec=key_spec)
 
     # Return the encrypted and plaintext data key
@@ -55,6 +50,10 @@ def encrypt_file(filename, cmk_id):
       file_contents = file.read()
 
     data_key_encrypted, data_key_plaintext = create_data_key(cmk_id)
+
+    print(data_key_plaintext)
+    print(data_key_encrypted)
+
     if data_key_encrypted is None:
         return
 
@@ -64,24 +63,21 @@ def encrypt_file(filename, cmk_id):
 
     # Write the encrypted data key and encrypted file contents together
     with open(filename + '.encrypted', 'wb') as file_encrypted:
-        file_encrypted.write(len(data_key_encrypted).to_bytes(NUM_BYTES_FOR_LEN,
-                                                              byteorder='big'))
-        file_encrypted.write(data_key_encrypted)
         file_encrypted.write(file_contents_encrypted)
 
-    return data_key_encrypted
+    return data_key_plaintext
 
-def decrypt_data_key(data_key_encrypted):
+def decrypt_data_key(data_key_encrypted, cmk_id):
     """Decrypt an encrypted data key"""
 
     # Decrypt the data key
-    kms_client = boto3.client("kms", region_name="eu-central-1", aws_access_key_id='AKIAZ55ECWRK6Y7N4PPW', aws_secret_access_key= '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')
-    response = kms_client.decrypt(CiphertextBlob=data_key_encrypted)
+    kms_client = boto3.client("kms")
+    response = kms_client.decrypt(CiphertextBlob=data_key_encrypted, KeyId=cmk_id)
 
     # Return plaintext base64-encoded binary data key
     return base64.b64encode((response["Plaintext"]))
 
-def decrypt_file(filename, data_key_encrypted):
+def decrypt_file(filename, data_key_encrypted, cmk_id):
     """Decrypt a file encrypted by encrypt_file()"""
 
     # Read the encrypted file into memory
@@ -90,19 +86,22 @@ def decrypt_file(filename, data_key_encrypted):
 
     # The first NUM_BYTES_FOR_LEN tells us the length of the encrypted data key
     # Bytes after that represent the encrypted file data
-    data_key_encrypted_len = int.from_bytes(file_contents[:NUM_BYTES_FOR_LEN],
-                                            byteorder="big") \
-                             + NUM_BYTES_FOR_LEN
+    #data_key_encrypted_len = int.from_bytes(file_contents[:NUM_BYTES_FOR_LEN],
+    #                                        byteorder="big") \
+    #                         + NUM_BYTES_FOR_LEN
     #data_key_encrypted = file_contents[NUM_BYTES_FOR_LEN:data_key_encrypted_len]
 
     # Decrypt the data key before using it
-    data_key_plaintext = decrypt_data_key(data_key_encrypted)
+
+
+
+    data_key_plaintext = decrypt_data_key(data_key_encrypted, cmk_id)
     if data_key_plaintext is None:
         return False
 
     # Decrypt the rest of the file
     f = Fernet(data_key_plaintext)
-    file_contents_decrypted = f.decrypt(file_contents[data_key_encrypted_len:])
+    file_contents_decrypted = f.decrypt(file_contents)
 
     # Write the decrypted file contents
     with open(filename + '.decrypted', 'wb') as file_decrypted:
@@ -136,13 +135,21 @@ chunk_size = 256
 nonce = bytes("0123456789012345",'utf-8')
 key = bytes("01234567890123456789012345678901",'utf-8')
 
-fileName= "ejemplo.txt"
-description="My Customer Master Key"
-key2,test2 = create_cmk(description)
-print(key2)
+fileNameMiguel= "ejemplo.txt"
+fileNameAlex= "ejemplo2.txt"
 
-keyFile = encrypt_file(fileName, key2)
-decrypt_file(fileName, keyFile)
+print(create_key_client("test"))
+
+#key2,test2 = create_cmk("miguel")
+#key3,test3 = create_cmk("alex")
+
+#keyFileMiguel = encrypt_file(fileNameMiguel, key2)
+#keyFileAlex = encrypt_file(fileNameAlex, key3)
+
+#decrypt_file(fileNameMiguel, keyFileMiguel, key2)
+#decrypt_file(fileNameAlex, keyFileAlex, key3)
+
+#decrypt_file(fileName, keyFile)
 
 #Ferment doesn't implemt the update pattern, so I am using a stream cipher instead.
 algorithm = algorithms.ChaCha20(key, nonce)
