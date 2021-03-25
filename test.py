@@ -1,23 +1,7 @@
-import base64
-import boto3
+import os, binascii
+from backports.pbkdf2 import pbkdf2_hmac
 
-def encrypt(session, secret, alias):
-    client = session.client('kms')
-    ciphertext = client.encrypt(
-        KeyId=alias,
-        Plaintext=bytes(secret),
-    )
-    return base64.b64encode(ciphertext["CiphertextBlob"])
-
-
-def decrypt(session, secret):
-    client = session.client('kms')
-    plaintext = client.decrypt(
-        CiphertextBlob=bytes(base64.b64decode(secret))
-    )
-    return plaintext["Plaintext"]
-
-
-session = boto3.session.Session()
-print(encrypt(session, 'something', 'alias/MyKeyAlias'))
-print(decrypt(session, 'AQECAINdoimaasydoasidDASD5asd45'))
+salt = binascii.unhexlify('aaef2d3f4d77ac66e9c5a6c3d8f921d1')
+password = "test".encode("utf8")
+key = pbkdf2_hmac("sha256", password, salt, 50000, 32)
+print("Derived key:", binascii.hexlify(key))

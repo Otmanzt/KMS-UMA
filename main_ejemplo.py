@@ -8,104 +8,84 @@ from cryptography.fernet import Fernet
 import os
 import shutil
 import base64
-import boto3
+
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+from cryptography.hazmat.primitives import hashes
+import os, binascii
+from backports.pbkdf2 import pbkdf2_hmac
+
+def convert_key(shared_key):
+    derived_key = HKDF(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=None,
+        info=b'handshake data',
+    ).derive(shared_key)
+
+    key = base64.urlsafe_b64encode(derived_key)
+
+    return key
 
 def create_key_client(password):
 
-    key = pbkdf2(password, "df1f2d3f4d77ac66e9c5a6c3d8f921b6", 1024, hash-function, derived-key-len)
+    salt = binascii.unhexlify('aaef2d3f4d77ac66e9c5a6c3d8f921d1')
+    password = password.encode("utf8")
+    key = pbkdf2_hmac("sha256", password, salt, 50000, 32)
+    
+    return binascii.hexlify(key)
 
-    f = Fernet()
-    return f.encrypt(password)
+def get_key_client(client):
+    return None
 
-def retrieve_cmk(description):
-    """Retrieve an existing KMS CMK based on its description"""
+def encrypt_data_key(filename, key_client):
 
-    # Retrieve a list of existing CMKs
-    # If more than 100 keys exist, retrieve and process them in batches
-    kms_client = boto3.client('kms')
-    response = kms_client.list_keys()
+    salt = binascii.unhexlify('aaef2d3f4d77ac66e9c5a6c3d8f921d1')
+    password = filename.encode("utf8")
+    key = pbkdf2_hmac("sha256", password, salt, 50000, 32)
 
-    for cmk in response["Keys"]:
-        key_info = kms_client.describe_key(KeyId=cmk["KeyArn"])
-        if key_info["KeyMetadata"]["Description"] == description:
-            return cmk["KeyId"], cmk["KeyArn"]
+    f = Fernet(convert_key(key_client))
+    return f.encrypt(key), key
 
-    # No matching CMK found
-    return None, None
-
-def create_data_key(cmk_id, key_spec="AES_256"):
-    """Generate a data key to use when encrypting and decrypting data"""
-
-    # Create data key
-    kms_client = boto3.client("kms")
-    response = kms_client.generate_data_key(KeyId=cmk_id, KeySpec=key_spec)
-
-    # Return the encrypted and plaintext data key
-    return response["CiphertextBlob"], base64.b64encode(response["Plaintext"])
-
-def encrypt_file(filename, cmk_id):
-    """Encrypt JSON data using an AWS KMS CMK"""
+def encrypt_file(filename, key_client):
 
     with open(filename, "rb") as file:
       file_contents = file.read()
 
-    data_key_encrypted, data_key_plaintext = create_data_key(cmk_id)
+    data_key_encrypted, data_key_plaintext = encrypt_data_key(filename, key_client)
 
-    print(data_key_plaintext)
-    print(data_key_encrypted)
-
-    if data_key_encrypted is None:
-        return
-
-    # Encrypt the data
-    f = Fernet(data_key_plaintext)
+    f = Fernet(convert_key(data_key_plaintext))
     file_contents_encrypted = f.encrypt(file_contents)
 
-    # Write the encrypted data key and encrypted file contents together
     with open(filename + '.encrypted', 'wb') as file_encrypted:
         file_encrypted.write(file_contents_encrypted)
 
-    return data_key_plaintext
+    return data_key_encrypted
 
-def decrypt_data_key(data_key_encrypted, cmk_id):
-    """Decrypt an encrypted data key"""
+def decrypt_data_key(data_key_encrypted, key_client):
 
-    # Decrypt the data key
-    kms_client = boto3.client("kms")
-    response = kms_client.decrypt(CiphertextBlob=data_key_encrypted, KeyId=cmk_id)
+    f = Fernet(convert_key(key_client))
+    return f.decrypt(data_key_encrypted)
 
-    # Return plaintext base64-encoded binary data key
-    return base64.b64encode((response["Plaintext"]))
+def decrypt_file(filename, data_key_encrypted, key_client):
 
-def decrypt_file(filename, data_key_encrypted, cmk_id):
-    """Decrypt a file encrypted by encrypt_file()"""
-
-    # Read the encrypted file into memory
     with open(filename + ".encrypted", "rb") as file:
       file_contents = file.read()
 
-    # The first NUM_BYTES_FOR_LEN tells us the length of the encrypted data key
-    # Bytes after that represent the encrypted file data
-    #data_key_encrypted_len = int.from_bytes(file_contents[:NUM_BYTES_FOR_LEN],
-    #                                        byteorder="big") \
-    #                         + NUM_BYTES_FOR_LEN
-    #data_key_encrypted = file_contents[NUM_BYTES_FOR_LEN:data_key_encrypted_len]
+    data_key_plaintext = decrypt_data_key(data_key_encrypted, key_client)
 
-    # Decrypt the data key before using it
-
-
-
-    data_key_plaintext = decrypt_data_key(data_key_encrypted, cmk_id)
-    if data_key_plaintext is None:
-        return False
-
-    # Decrypt the rest of the file
-    f = Fernet(data_key_plaintext)
+    f = Fernet(convert_key(data_key_plaintext))
     file_contents_decrypted = f.decrypt(file_contents)
 
-    # Write the decrypted file contents
     with open(filename + '.decrypted', 'wb') as file_decrypted:
       file_decrypted.write(file_contents_decrypted)
+
+def change_files_with_new_keys(oldKeyClient, newKeyClient, data_key_encrypted, filename):
+
+    decrypt_file(filename, data_key_encrypted, oldKeyClient)
+    data_key_encryptionNew=encrypt_file(filename, newKeyClient)
+
+    os.remove(filename + '.decrypted')
+    return data_key_encryptionNew
 
 path = '.'
 path_secure = './secure/'
@@ -136,9 +116,13 @@ nonce = bytes("0123456789012345",'utf-8')
 key = bytes("01234567890123456789012345678901",'utf-8')
 
 fileNameMiguel= "ejemplo.txt"
-fileNameAlex= "ejemplo2.txt"
 
-print(create_key_client("test"))
+keyClient = create_key_client("test")
+keyFile = encrypt_file(fileNameMiguel, keyClient)
+
+keyClient2 = create_key_client("test")
+newKeyFile = change_files_with_new_keys(keyClient,keyClient2,keyFile,fileNameMiguel)
+decrypt_file(fileNameMiguel,newKeyFile,keyClient2)
 
 #key2,test2 = create_cmk("miguel")
 #key3,test3 = create_cmk("alex")
