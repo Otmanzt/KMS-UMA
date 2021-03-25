@@ -69,6 +69,8 @@ def encrypt_file(filename, cmk_id):
         file_encrypted.write(data_key_encrypted)
         file_encrypted.write(file_contents_encrypted)
 
+    return data_key_encrypted
+
 def decrypt_data_key(data_key_encrypted):
     """Decrypt an encrypted data key"""
 
@@ -79,7 +81,7 @@ def decrypt_data_key(data_key_encrypted):
     # Return plaintext base64-encoded binary data key
     return base64.b64encode((response["Plaintext"]))
 
-def decrypt_file(filename):
+def decrypt_file(filename, data_key_encrypted):
     """Decrypt a file encrypted by encrypt_file()"""
 
     # Read the encrypted file into memory
@@ -91,7 +93,7 @@ def decrypt_file(filename):
     data_key_encrypted_len = int.from_bytes(file_contents[:NUM_BYTES_FOR_LEN],
                                             byteorder="big") \
                              + NUM_BYTES_FOR_LEN
-    data_key_encrypted = file_contents[NUM_BYTES_FOR_LEN:data_key_encrypted_len]
+    #data_key_encrypted = file_contents[NUM_BYTES_FOR_LEN:data_key_encrypted_len]
 
     # Decrypt the data key before using it
     data_key_plaintext = decrypt_data_key(data_key_encrypted)
@@ -139,8 +141,8 @@ description="My Customer Master Key"
 key2,test2 = create_cmk(description)
 print(key2)
 
-encrypt_file(fileName, key2)
-decrypt_file(fileName, key2)
+keyFile = encrypt_file(fileName, key2)
+decrypt_file(fileName, keyFile)
 
 #Ferment doesn't implemt the update pattern, so I am using a stream cipher instead.
 algorithm = algorithms.ChaCha20(key, nonce)
