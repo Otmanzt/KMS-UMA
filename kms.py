@@ -15,6 +15,7 @@ from cryptography.hazmat.primitives import hashes
 import os, binascii
 from backports.pbkdf2 import pbkdf2_hmac
 from Crypto.Cipher import AES
+from datetime import datetime
 
 client = pymongo.MongoClient("mongodb+srv://spea:grupodetres@cluster0.uscnp.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
 db = client['ServerFiles']
@@ -80,9 +81,10 @@ def encrypt_file(client_name, fichero, encrypt_option):
     
     #DESCOMENTAR PARA LA FASE FINAL
     os.remove(upload_path)
+    fecha_subida = datetime.today()
 
     coleccionFicheros.delete_many({"path": encrypted_path + '/' + filename})
-    fichero = {"client": client_name, "datakey": data_key_encrypted, "path": encrypted_path + '/' + filename}
+    fichero = {"client": client_name, "datakey": data_key_encrypted, "path": encrypted_path + '/' + filename, "fecha_subida": fecha_subida, "nombre": filename, "tipo_enc": encrypt_option}
     coleccionFicheros.insert_one(fichero)
 
 def decrypt_data_key(data_key_encrypted, key_client, encrypt_option):
@@ -123,6 +125,10 @@ def decrypt_file(client_name, filename, encrypt_option):
 
     with open(decrypted_path + '/' + filename, 'wb') as file_decrypted:
         file_decrypted.write(file_contents_decrypted)
+
+    ruta = decrypted_path + '/' + filename
+
+    return ruta
 
 def key_rotation(client_name, encrypt_option):
 

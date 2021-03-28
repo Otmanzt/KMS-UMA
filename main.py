@@ -54,5 +54,23 @@ def precargar():
     return response
 
 
+@app.route('/listar', methods=['POST', 'GET'])
+def listar():
+    datos = listar_ficheros()
+    return render_template('listar.html', datos=datos)
+
+
+@app.route('/descargar', methods=['POST', 'GET'])
+def descargar():
+    response = {"estado": False}
+
+    if request.form:
+        fichero = request.form['fichero']
+        enctype = request.form['enctype']
+        response = descargar_fichero(fichero,enctype)
+
+    return response
+
+
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=8080, debug=True)

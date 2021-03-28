@@ -7,7 +7,8 @@ from backports.pbkdf2 import pbkdf2_hmac
 
 client = pymongo.MongoClient("mongodb+srv://spea:grupodetres@cluster0.uscnp.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
 db = client['ServerFiles']
-coleccion = db['Usuarios']
+coleccionUsuarios = db['Usuarios']
+coleccionFicheros = db['Ficheros']
 
 
 def insertar_usuario(correo, password):
@@ -19,20 +20,25 @@ def insertar_usuario(correo, password):
     key = pbkdf2_hmac("sha256", passwordTmp, salt, 50000, 32)
 
     usuario = {"correo": correo, "password": hashed_password.hexdigest(), "key": binascii.hexlify(key)}
-    resultado = coleccion.insert_one(usuario)
+    resultado = coleccionUsuarios.insert_one(usuario)
     return resultado
 
 
 def buscar_usuario(correo):
-    resultado = coleccion.find_one({"correo": correo})
+    resultado = coleccionUsuarios.find_one({"correo": correo})
     return resultado
 
 
 def comprobar_usuario(correo, password):
     hashed_password = hashlib.new("sha1", password.encode())
-    resultado = coleccion.find_one({"correo": correo, "password": hashed_password.hexdigest()})
+    resultado = coleccionUsuarios.find_one({"correo": correo, "password": hashed_password.hexdigest()})
 
     if resultado is not None:
         resultado = True
 
+    return resultado
+
+
+def buscar_ficheros_usuario(correo):
+    resultado = coleccionFicheros.find({"client": correo}, {"_id": 1, "nombre": 1, "fecha_subida": 1, "tipo_enc":1})
     return resultado

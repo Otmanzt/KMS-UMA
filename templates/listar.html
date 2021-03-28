@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="row">
+	    <div class="offset-lg-3 col-md-6 text-center">
+
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Nombre</th>
+              <th scope="col">Fecha Subida</th>
+              <th scope="col">Acci&oacute;n</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for value in datos %}
+            <tr>
+              <th scope="row">{{loop.index}}</th>
+              <td>{{value['nombre']}}</td>
+              <td>{{value['fecha_subida']}}</td>
+              <td><a class="link-accion btn-descargar" href="" data-name="{{value['nombre']}}" data-enctype = "{{value['tipo_enc']}}" > <i class="fas fa-download"></i> </a> <a class="link-accion" href=""> <i class="fas fa-trash-alt"></i> </a></td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+
+	    </div>
+</div>
+<br/>
+<br/>
+<br/>
+
+{% endblock content %}
+
+{% block javascript%}
+
+    $(".btn-descargar").on("click",function(evt){
+				evt.preventDefault();
+                var fd = new FormData();
+		        var files = $(this).attr("data-name");
+                var enctype = $(this).attr("data-enctype");
+                fd.append('fichero',files);
+                fd.append('enctype',enctype);
+
+		        $.ajax({
+		            url: '/descargar',
+		            type: 'post',
+                    data: fd,
+		            contentType: false,
+		            processData: false,
+		            success: function(response){
+		                if(response != 0){
+							console.log(response);
+		                }else{
+		                	alert("Error al cargar el fichero");
+		                }
+		            },
+		        });
+	    	})
+
+
+{% endblock javascript%}

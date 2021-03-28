@@ -56,3 +56,13 @@ def subir_fichero(request):
 
     response = json.dumps(response)
     return response
+
+
+def listar_ficheros():
+    lista = buscar_ficheros_usuario(session["usuario"])
+    return lista
+
+
+def descargar_fichero(fichero, enctype):
+    ruta = decrypt_file(session["usuario"], fichero, int(enctype))
+    print(ruta)
