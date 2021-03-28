@@ -44,7 +44,7 @@ def encrypt_data_key(key_client, filename, encrypt_option):
     if encrypt_option == 0:
         f = Fernet(convert_key(key_client))
         return f.encrypt(key), key
-    else:
+    elif encrypt_option == 1:
         key_aes = convert_key(key_client)
         key_aes = key_aes[1:33]
 
@@ -67,7 +67,7 @@ def encrypt_file(client_name, fichero, encrypt_option):
     if encrypt_option == 0:
         f = Fernet(convert_key(data_key_plaintext))
         file_contents_encrypted = f.encrypt(file_contents)
-    else:
+    elif encrypt_option == 1:
         key_aes = convert_key(data_key_plaintext)
         key_aes = key_aes[1:33]
 
@@ -92,7 +92,7 @@ def decrypt_data_key(data_key_encrypted, key_client, encrypt_option):
     if encrypt_option == 0:
         f = Fernet(convert_key(key_client))
         return f.decrypt(data_key_encrypted)
-    else:
+    elif encrypt_option == 1:
         key_aes = convert_key(key_client)
         key_aes = key_aes[1:33]
 
@@ -114,7 +114,7 @@ def decrypt_file(client_name, filename, encrypt_option):
     if encrypt_option == 0:
         f = Fernet(convert_key(data_key_plaintext))
         file_contents_decrypted = f.decrypt(file_contents)
-    else:
+    elif encrypt_option == 1:
         key_aes = convert_key(data_key_plaintext)
         key_aes = key_aes[1:33]
 
@@ -156,7 +156,7 @@ def key_rotation(client_name, encrypt_option):
         if encrypt_option == 0:
             f = Fernet(convert_key(data_key_plaintext))
             file_contents_decrypted = f.decrypt(file_contents)
-        else:
+        elif encrypt_option == 1:
             key_aes = convert_key(data_key_plaintext)
             key_aes = key_aes[1:33]
 

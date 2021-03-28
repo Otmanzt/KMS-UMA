@@ -1,6 +1,7 @@
 
 from flask import Flask, render_template, request, redirect, url_for, session
 from views import *
+import urllib.request
 
 app = Flask(__name__, static_url_path='/static')
 app.secret_key = 'BQ2S5Idd4C'
@@ -67,8 +68,7 @@ def descargar():
     if request.form:
         fichero = request.form['fichero']
         enctype = request.form['enctype']
-        response = descargar_fichero(fichero,enctype)
-
+        response = descargar_fichero(fichero, enctype)
     return response
 
 

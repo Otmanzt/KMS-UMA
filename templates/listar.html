@@ -24,7 +24,6 @@
           {% endfor %}
           </tbody>
         </table>
-
 	    </div>
 </div>
 <br/>
@@ -51,7 +50,10 @@
 		            processData: false,
 		            success: function(response){
 		                if(response != 0){
-							console.log(response);
+                            var obj = JSON.parse(response)
+							console.log(obj);
+                            //alert("file://C:\\Users\\migue\\Documents\\KMS-UMA\\"+obj.enlace)
+                            alert("El archivo desencriptado esta en: "+obj.enlace)
 		                }else{
 		                	alert("Error al cargar el fichero");
 		                }
