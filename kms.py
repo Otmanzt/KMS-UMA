@@ -79,13 +79,12 @@ def encrypt_file(client_name, fichero, encrypt_option):
     with open(encrypted_path + '/' + filename, 'wb') as file_encrypted:
         file_encrypted.write(file_contents_encrypted)
     
-    #DESCOMENTAR PARA LA FASE FINAL
     os.remove(upload_path)
     fecha_subida = datetime.today()
 
     coleccionFicheros.delete_many({"path": encrypted_path + '/' + filename})
-    fichero = {"client": client_name, "datakey": data_key_encrypted, "path": encrypted_path + '/' + filename, "fecha_subida": fecha_subida, "nombre": filename, "tipo_enc": encrypt_option}
-    coleccionFicheros.insert_one(fichero)
+    fileToUpload = {"client": client_name, "datakey": data_key_encrypted, "path": encrypted_path + '/' + filename, "fecha_subida": fecha_subida, "nombre": filename, "tipo_enc": encrypt_option}
+    coleccionFicheros.insert_one(fileToUpload)
 
 def decrypt_data_key(data_key_encrypted, key_client, encrypt_option):
 
@@ -99,12 +98,13 @@ def decrypt_data_key(data_key_encrypted, key_client, encrypt_option):
         cipher = AES.new(key_aes, AES.MODE_GCM, nonce=nonce)
         return cipher.decrypt(data_key_encrypted)
 
-def decrypt_file(client_name, filename, encrypt_option):
+def decrypt_file(client_name, filename):
 
     encrypted_path = 'encrypted/' + client_name
     decrypted_path = 'download/' + client_name
     key_client = coleccionUsuarios.find_one({"correo": client_name})['key']
     data_key_encrypted = coleccionFicheros.find_one({"path": encrypted_path + "/" + filename})['datakey']
+    encrypt_option = coleccionFicheros.find_one({"path": encrypted_path + "/" + filename})['tipo_enc']
 
     with open(encrypted_path + '/' + filename, "rb") as file:
         file_contents = file.read()
@@ -130,7 +130,7 @@ def decrypt_file(client_name, filename, encrypt_option):
 
     return ruta
 
-def key_rotation(client_name, encrypt_option):
+def key_rotation(client_name):
 
     oldKeyClient = coleccionUsuarios.find_one({"correo": client_name})['key']
     password = coleccionUsuarios.find_one({"correo": client_name})['password']
@@ -147,6 +147,7 @@ def key_rotation(client_name, encrypt_option):
     for filename in os.listdir(encrypted_path):
 
         data_key_encrypted = coleccionFicheros.find_one({"path": encrypted_path + "/" + filename})['datakey']
+        encrypt_option = coleccionFicheros.find_one({"path": encrypted_path + "/" + filename})['tipo_enc']
 
         with open(encrypted_path + '/' + filename, "rb") as file:
             file_contents = file.read()
@@ -193,12 +194,12 @@ def key_rotation(client_name, encrypt_option):
         coleccionFicheros.update_one({"path": encrypted_path + "/" + filename},{"$set": {"datakey": data_key_encrypted}})
 
 '''
-fileName= "ejemplo.txt"
+filename= "ejemplo.txt"
 nameClient = "testflowww@yahoo.com"
 
-encrypt_file(nameClient, fileName, 1)
-key_rotation(nameClient, 1)
-decrypt_file(nameClient, fileName, 1)
+encrypt_file(nameClient, filename, 0)
+key_rotation(nameClient)
+decrypt_file(nameClient, filename)
 
 nameClient2 = "test2"
 keyClient2 = create_key_client(nameClient2)

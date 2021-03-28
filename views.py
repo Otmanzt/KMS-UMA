@@ -64,7 +64,7 @@ def listar_ficheros():
 
 
 def descargar_fichero(fichero, enctype):
-    ruta = decrypt_file(session["usuario"], fichero, int(enctype))
+    ruta = decrypt_file(session["usuario"], fichero)
 
     response = {
         "enlace": ruta
