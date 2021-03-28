@@ -5,3 +5,5 @@ cryptography~=3.4.6
 pymongo~=3.11.3
 dnspython
 boto3
+backports.pbkdf2
+setuptools~=47.1.0

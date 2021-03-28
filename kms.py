@@ -51,9 +51,10 @@ def encrypt_data_key(key_client, filename, encrypt_option):
         encrypted_message = cipher.encrypt(key) 
         return encrypted_message, key
 
-def encrypt_file(client_name, filename, encrypt_option):
-
+def encrypt_file(client_name, fichero, encrypt_option):
+    filename = fichero.filename
     upload_path = 'upload/' + filename
+    fichero.save(upload_path)
     encrypted_path = 'encrypted/' + client_name
     key_client = coleccionUsuarios.find_one({"correo": client_name})['key']
 
@@ -78,7 +79,7 @@ def encrypt_file(client_name, filename, encrypt_option):
         file_encrypted.write(file_contents_encrypted)
     
     #DESCOMENTAR PARA LA FASE FINAL
-    #os.remove(upload_path)
+    os.remove(upload_path)
 
     coleccionFicheros.delete_many({"path": encrypted_path + '/' + filename})
     fichero = {"client": client_name, "datakey": data_key_encrypted, "path": encrypted_path + '/' + filename}
@@ -185,6 +186,7 @@ def key_rotation(client_name, encrypt_option):
 
         coleccionFicheros.update_one({"path": encrypted_path + "/" + filename},{"$set": {"datakey": data_key_encrypted}})
 
+'''
 fileName= "ejemplo.txt"
 nameClient = "testflowww@yahoo.com"
 
@@ -192,7 +194,6 @@ encrypt_file(nameClient, fileName, 1)
 key_rotation(nameClient, 1)
 decrypt_file(nameClient, fileName, 1)
 
-'''
 nameClient2 = "test2"
 keyClient2 = create_key_client(nameClient2)
 keyFile2 = encrypt_file(keyClient2, nameClient2, fileName)

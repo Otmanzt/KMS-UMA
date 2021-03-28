@@ -1,6 +1,7 @@
 from models import *
 from flask import session
-
+from kms import *
+import json
 
 # Funcion para coger los datos de registro y crearlo en la base de datos de MongoDB
 def registrar_usuario(request):
@@ -40,3 +41,18 @@ def iniciar_sesion(request):
         datos['msg'] = "Contraseña incorrecta"
 
     return datos
+
+
+def subir_fichero(request):
+    fichero = request.files['fichero']
+    opcionEnc = request.form["opcionEnc"]
+
+    encrypt_file(session["usuario"], fichero, opcionEnc)
+    response = {
+        "estado": True,
+        "fichero": fichero.filename,
+        "opcionEnc": request.form["opcionEnc"]
+    }
+
+    response = json.dumps(response)
+    return response

@@ -39,5 +39,20 @@ def registrar():
     return render_template('registrar.html', datos=datos)
 
 
+@app.route('/agregar', methods=['POST', 'GET'])
+def agregar():
+    return render_template('agregar.html')
+
+
+@app.route('/precargar', methods=['POST', 'GET'])
+def precargar():
+    response = {"estado": False}
+
+    if request.files:
+        response = subir_fichero(request)
+
+    return response
+
+
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=8080, debug=True)
