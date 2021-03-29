@@ -47,7 +47,7 @@ def subir_fichero(request):
     fichero = request.files['fichero']
     opcionEnc = request.form["opcionEnc"]
 
-    encrypt_file(session["usuario"], fichero, opcionEnc)
+    encrypt_file(session["usuario"], fichero, int(opcionEnc))
     response = {
         "estado": True,
         "fichero": fichero.filename,
@@ -64,5 +64,11 @@ def listar_ficheros():
 
 
 def descargar_fichero(fichero, enctype):
-    ruta = decrypt_file(session["usuario"], fichero, int(enctype))
-    print(ruta)
+    ruta = decrypt_file(session["usuario"], fichero)
+
+    response = {
+        "enlace": ruta
+    }
+
+    response = json.dumps(response)
+    return response
