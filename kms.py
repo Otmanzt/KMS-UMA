@@ -143,6 +143,7 @@ def key_rotation(client_name):
 
     encrypted_path = 'encrypted/' + client_name
     keyrotation_path = 'keyrotation/' + client_name
+    file_contents_decrypted = None
 
     for filename in os.listdir(encrypted_path):
 
@@ -191,7 +192,9 @@ def key_rotation(client_name):
         
         os.remove(keyrotation_path + '/' + filename)
 
-        coleccionFicheros.update_one({"path": encrypted_path + "/" + filename},{"$set": {"datakey": data_key_encrypted}})
+        resultado = coleccionFicheros.update_one({"path": encrypted_path + "/" + filename},{"$set": {"datakey": data_key_encrypted}})
+
+        return resultado
 
 '''
 filename= "ejemplo.txt"

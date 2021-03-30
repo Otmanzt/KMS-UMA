@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="row">
+	    <div class="offset-lg-3 col-md-6 text-center">
+            <h4 class="w-100 font-weight-bold">Rotación de las claves</h4>
+            <p>Si deseas continuar con la <b>rotaci&oacute;n de las claves</b>, ten en cuenta que es un proceso en el que se <b>desencriptar&aacute;n todos tus ficheros</b> para generar una <b>nueva
+                clave</b> para cada uno de ellos a partir de tu clave de cliente.
+                <br>
+                <br>
+                Por lo tanto, es un proceso que puede tardar en funci&oacute;n del n&uacute;mero de ficheros que tengas. Ten paciencia,
+                cuando el proceso acabe se te notificar&aacute;
+            </p>
+            <button class="btn btn-danger" id="btn-rotar">Rotar</button>
+			<div id="spinner" class="mt-5 d-none">
+            <div class="spinner-border" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+	    </div>
+</div>
+<br/>
+<br/>
+<br/>
+
+{% endblock content %}
+
+{% block javascript%}
+	function controlSpinner(){
+        $("#spinner").toggleClass("d-none")
+    }
+    $("#btn-rotar").on("click",function(evt){
+				evt.preventDefault();
+				controlSpinner()
+        		$(this).prop("disabled",true);
+		        $.ajax({
+		            url: '/confirmarRotar',
+		            type: 'post',
+		            contentType: false,
+		            processData: false,
+		            success: function(response){
+						var obj = JSON.parse(response)
+		                if(obj.estado == true){
+							controlSpinner()
+							$(this).prop("disabled",false);
+							alert("Rotación completada con éxito");
+		                }else{
+							controlSpinner()
+							$(this).prop("disabled",false);
+		                	alert("Error al cargar el fichero");
+		                }
+		            },
+		        });
+	    	})
+
+
+{% endblock javascript%}
