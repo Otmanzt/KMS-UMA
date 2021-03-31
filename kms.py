@@ -16,6 +16,7 @@ import os, binascii
 from backports.pbkdf2 import pbkdf2_hmac
 from Crypto.Cipher import AES
 from datetime import datetime
+import hashlib
 
 client = pymongo.MongoClient("mongodb+srv://spea:grupodetres@cluster0.uscnp.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
 db = client['ServerFiles']
@@ -52,12 +53,16 @@ def encrypt_data_key(key_client, filename, encrypt_option):
         encrypted_message = cipher.encrypt(key) 
         return encrypted_message, key
 
-def encrypt_file(client_name, fichero, encrypt_option):
+def encrypt_file(client_name, fichero, encrypt_option, compartido):
+    if compartido != "":
+        key_client = create_shared_key(client_name, compartido)
+    else:
+        key_client = coleccionUsuarios.find_one({"correo": client_name})['key']
     filename = fichero.filename
     upload_path = 'upload/' + filename
     fichero.save(upload_path)
     encrypted_path = 'encrypted/' + client_name
-    key_client = coleccionUsuarios.find_one({"correo": client_name})['key']
+    encrypted_path2 = 'encrypted/' + compartido
 
     with open(upload_path, "rb") as file:
         file_contents = file.read()
@@ -75,15 +80,25 @@ def encrypt_file(client_name, fichero, encrypt_option):
         file_contents_encrypted = cipher.encrypt(file_contents) 
 
     os.makedirs(encrypted_path, exist_ok=True)
+    if compartido != "":
+        os.makedirs(encrypted_path2, exist_ok=True)
 
     with open(encrypted_path + '/' + filename, 'wb') as file_encrypted:
         file_encrypted.write(file_contents_encrypted)
-    
+        
+    if compartido != "":
+        with open(encrypted_path2 + '/' + filename, 'wb') as file_encrypted:
+            file_encrypted.write(file_contents_encrypted) 
+           
     os.remove(upload_path)
     fecha_subida = datetime.today()
 
     coleccionFicheros.delete_many({"path": encrypted_path + '/' + filename})
-    fileToUpload = {"client": client_name, "datakey": data_key_encrypted, "path": encrypted_path + '/' + filename, "fecha_subida": fecha_subida, "nombre": filename, "tipo_enc": encrypt_option}
+    if compartido != "":
+        coleccionFicheros.delete_many({"path": encrypted_path2 + '/' + filename})
+        fileToUpload = {"client": client_name, "datakey": data_key_encrypted, "path": encrypted_path + '/' + filename,"path2": encrypted_path2 + '/' + filename, "fecha_subida": fecha_subida, "nombre": filename, "tipo_enc": encrypt_option, "compartido": compartido}
+    else:
+        fileToUpload = {"client": client_name, "datakey": data_key_encrypted, "path": encrypted_path + '/' + filename, "fecha_subida": fecha_subida, "nombre": filename, "tipo_enc": encrypt_option}
     coleccionFicheros.insert_one(fileToUpload)
 
 def decrypt_data_key(data_key_encrypted, key_client, encrypt_option):
@@ -99,12 +114,20 @@ def decrypt_data_key(data_key_encrypted, key_client, encrypt_option):
         return cipher.decrypt(data_key_encrypted)
 
 def decrypt_file(client_name, filename):
-
     encrypted_path = 'encrypted/' + client_name
     decrypted_path = 'download/' + client_name
-    key_client = coleccionUsuarios.find_one({"correo": client_name})['key']
-    data_key_encrypted = coleccionFicheros.find_one({"path": encrypted_path + "/" + filename})['datakey']
-    encrypt_option = coleccionFicheros.find_one({"path": encrypted_path + "/" + filename})['tipo_enc']
+    if coleccionFicheros.find_one({"path": encrypted_path + "/" + filename}) is None:
+       key_client = coleccionUsuarios.find_one({"correo": client_name})['shared_key'] 
+       data_key_encrypted = coleccionFicheros.find_one({"path2": encrypted_path + "/" + filename})['datakey'] 
+       encrypt_option = coleccionFicheros.find_one({"path2": encrypted_path + "/" + filename})['tipo_enc']
+    elif coleccionFicheros.find_one({"path": encrypted_path + "/" + filename}) is not None and coleccionFicheros.find_one({"path": encrypted_path + "/" + filename}).get('compartido'):
+        key_client = coleccionUsuarios.find_one({"correo": client_name})['shared_key']
+        data_key_encrypted = coleccionFicheros.find_one({"path": encrypted_path + "/" + filename})['datakey']
+        encrypt_option = coleccionFicheros.find_one({"path": encrypted_path + "/" + filename})['tipo_enc']
+    else:
+        key_client = coleccionUsuarios.find_one({"correo": client_name})['key'] 
+        data_key_encrypted = coleccionFicheros.find_one({"path": encrypted_path + "/" + filename})['datakey']
+        encrypt_option = coleccionFicheros.find_one({"path": encrypted_path + "/" + filename})['tipo_enc']
 
     with open(encrypted_path + '/' + filename, "rb") as file:
         file_contents = file.read()
@@ -195,6 +218,24 @@ def key_rotation(client_name):
         resultado = coleccionFicheros.update_one({"path": encrypted_path + "/" + filename},{"$set": {"datakey": data_key_encrypted}})
 
         return resultado
+    
+def create_shared_key(client_name, compartido):
+    password1 = key_client = coleccionUsuarios.find_one({"correo": client_name})['password']
+    password2 = key_client = coleccionUsuarios.find_one({"correo": compartido})['password']
+    
+    password_shared = password1 + password2
+    
+    hashed_password = hashlib.new("sha1", password_shared.encode())
+
+    #Crea la key_client para guardarla con el usuario a crear.
+    salt = binascii.unhexlify('aaef2d3f4d77ac66e9c5a6c3d8f921d1')
+    passwordTmp = password_shared.encode("utf8")
+    key = pbkdf2_hmac("sha256", passwordTmp, salt, 50000, 32)
+
+    dato = {"$set": {"shared_key": binascii.hexlify(key)}}
+    coleccionUsuarios.update_one({"correo": client_name}, dato)
+    coleccionUsuarios.update_one({"correo": compartido}, dato)
+    return binascii.hexlify(key)        
 
 '''
 filename= "ejemplo.txt"

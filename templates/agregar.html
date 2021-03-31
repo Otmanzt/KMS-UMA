@@ -11,6 +11,12 @@
                       <label for="fichero" class="form-label">Fichero a subir a la plataforma</label>
                       <input class="form-control" type="file" id="fichero" name="fichero" required>
                     </div>
+		  		  <div>
+					  <span class="form-label">Compartir con: </span>
+				  </div> 
+	              <div class="mb-3">
+                      <input class="form-control" type="text" id="compartirUsuario" name="compartirUsuario" inputmode="email" required>
+                    </div>				                     
 				  <div>
 					  <span class="form-label">Tipo de encriptación</span>
 				  </div>
@@ -42,6 +48,8 @@
 				evt.preventDefault();
 	    		var fd = new FormData();
 		        var files = $("#fichero")[0].files[0];
+		        var compartido = $("#compartirUsuario").val();
+		        console.log(compartido);
 
 				if ($("#fernet").prop("checked")){
 					opcionEnc = 0
@@ -49,6 +57,7 @@
 					opcionEnc = 1
 				}
 		        fd.append('fichero',files);
+		        fd.append('compartido', compartido)
 				fd.append('opcionEnc', opcionEnc);
 
 		        $.ajax({

@@ -47,8 +47,11 @@ def iniciar_sesion(request):
 def subir_fichero(request):
     fichero = request.files['fichero']
     opcionEnc = request.form["opcionEnc"]
-
-    encrypt_file(session["usuario"], fichero, int(opcionEnc))
+    print(request.form['compartido'])
+    if request.form['compartido'] == "":
+        encrypt_file(session["usuario"], fichero, int(opcionEnc), "")
+    else:
+        encrypt_file(session["usuario"], fichero, int(opcionEnc), request.form['compartido'])
     response = {
         "estado": True,
         "fichero": fichero.filename,

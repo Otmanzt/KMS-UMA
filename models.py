@@ -40,5 +40,5 @@ def comprobar_usuario(correo, password):
 
 
 def buscar_ficheros_usuario(correo):
-    resultado = coleccionFicheros.find({"client": correo}, {"_id": 1, "nombre": 1, "fecha_subida": 1, "tipo_enc":1})
+    resultado = coleccionFicheros.find({"$or" :[{"client": correo}, {"compartido": correo}]}, {"_id": 1, "nombre": 1, "fecha_subida": 1, "tipo_enc":1})
     return resultado
