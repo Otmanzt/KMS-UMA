@@ -2,6 +2,7 @@ from models import *
 from flask import session
 from kms import *
 import json
+from bson import ObjectId
 
 # Funcion para coger los datos de registro y crearlo en la base de datos de MongoDB
 def registrar_usuario(request):
@@ -72,3 +73,9 @@ def descargar_fichero(fichero, enctype):
 
     response = json.dumps(response)
     return response
+
+def borrar_fichero_BD(id):
+    id = ObjectId(id)
+    path = coleccionFicheros.find_one({"_id": id})['path']
+    coleccionFicheros.delete_one({"_id": id})    
+    return path

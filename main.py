@@ -2,6 +2,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 from views import *
 import urllib.request
+from secure_delete import secure_delete
 
 app = Flask(__name__, static_url_path='/static')
 app.secret_key = 'BQ2S5Idd4C'
@@ -70,6 +71,14 @@ def descargar():
         enctype = request.form['enctype']
         response = descargar_fichero(fichero, enctype)
     return response
+
+@app.route('/borradoSeguro/<id>', methods=['POST', 'GET'])
+def borrar(id):
+    path = borrar_fichero_BD(id)
+    secure_delete.secure_random_seed_init()
+    secure_delete.secure_delete(path)
+    datos = listar_ficheros()
+    return render_template('listar.html', datos=datos)
 
 
 if __name__ == '__main__':

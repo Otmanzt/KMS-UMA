@@ -7,3 +7,4 @@ dnspython
 boto3
 backports.pbkdf2
 setuptools~=47.1.0
+secure_delete

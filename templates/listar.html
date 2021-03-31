@@ -19,7 +19,7 @@
               <th scope="row">{{loop.index}}</th>
               <td>{{value['nombre']}}</td>
               <td>{{value['fecha_subida']}}</td>
-              <td><a class="link-accion btn-descargar" href="" data-name="{{value['nombre']}}" data-enctype = "{{value['tipo_enc']}}" > <i class="fas fa-download"></i> </a> <a class="link-accion" href=""> <i class="fas fa-trash-alt"></i> </a></td>
+              <td><a class="link-accion btn-descargar" href="" data-name="{{value['nombre']}}" data-enctype = "{{value['tipo_enc']}}" > <i class="fas fa-download"></i> </a> <a class="link-accion" href="/borradoSeguro/{{value['_id']}}"> <i class="fas fa-trash-alt"></i> </a></td>
             </tr>
           {% endfor %}
           </tbody>
