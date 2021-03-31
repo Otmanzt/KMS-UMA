@@ -236,23 +236,3 @@ def create_shared_key(client_name, compartido):
     coleccionUsuarios.update_one({"correo": client_name}, dato)
     coleccionUsuarios.update_one({"correo": compartido}, dato)
     return binascii.hexlify(key)        
-
-'''
-filename= "ejemplo.txt"
-nameClient = "testflowww@yahoo.com"
-
-encrypt_file(nameClient, filename, 0)
-key_rotation(nameClient)
-decrypt_file(nameClient, filename)
-
-nameClient2 = "test2"
-keyClient2 = create_key_client(nameClient2)
-keyFile2 = encrypt_file(keyClient2, nameClient2, fileName)
-
-decrypt_file(keyClient,keyFile,nameClient,fileName)
-decrypt_file(keyClient2,keyFile2,nameClient2,fileName)
-
-newKeyClient = create_key_client(nameClient)
-
-key_rotation(keyClient, newKeyClient, keyFile, nameClient, fileName)
-'''

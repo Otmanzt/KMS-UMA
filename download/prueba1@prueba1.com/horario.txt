@@ -1,0 +1,30 @@
+DIRECCIÓN DE SISTEMAS DE INFORMACIÓN Y ESTRATEGIA TECNOLÓGICA
+Plataforma: Hay tanto Teams como BB.
+Examen: No.
+Practicas: Grupos de 4.
+
+INDUSTRIALIZACIÓN Y DESPLIEGUE DE SISTEMAS IOT 
+Plataforma: (Primero) Teams.
+Plataforma: (Segundo, Dani) https://meet.google.com/wej-ruad-tqf
+Examen: No.
+Practicas: Grupos de 2/3.
+
+INFRAESTRUCTURA PARA COMPUTACIÓN EN LA NUBE
+Plataforma: BB.
+Examen: Si, examenes al acabar cada tema.
+Practicas: Individuales.
+
+INGENIERÍA Y CIENCIA DE DATOS II
+Plataforma: BB.
+Examen: Dos prácticas evaluables que se hacen en una clase. Eso sería el examen.
+Practicas: Grupo de 3.
+
+SEGURIDAD Y PRIVACIDAD EN ENTORNOS DE APLICACIONES
+Plataforma: Teams.
+Examen: Actividades evaluable (valen 10%).
+Practicas: Grupo de 3.
+
+ALTAS PRESTACIONES PARA DATOS Y CIBERSEGURIDAD
+Plataforma: Teams.
+Examen: No.
+Practicas: Hay prácticas cortas (individuales) y un proyecto (que no está seguro, pero cree que será en grupos).
