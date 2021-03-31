@@ -81,5 +81,22 @@ def borrar(id):
     return render_template('listar.html', datos=datos)
 
 
+@app.route('/rotar', methods=['POST', 'GET'])
+def rotar():
+    return render_template('rotar.html')
+
+
+@app.route('/confirmarRotar', methods=['POST', 'GET'])
+def confirmarRotar():
+    response = {"estado": False}
+
+    resultado = key_rotation(session['usuario'])
+
+    if resultado:
+        response['estado'] = True
+
+    response = json.dumps(response)
+    return response
+
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=8080, debug=True)
