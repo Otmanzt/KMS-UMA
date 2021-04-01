@@ -55,7 +55,7 @@ def encrypt_data_key(key_client, filename, encrypt_option):
 
 def encrypt_file(client_name, fichero, encrypt_option, compartido):
     if compartido != "":
-        key_client = create_shared_key(client_name, compartido)
+        key_client = create_shared_key(client_name, compartido, fichero.filename)
     else:
         key_client = coleccionUsuarios.find_one({"correo": client_name})['key']
     filename = fichero.filename
@@ -116,12 +116,13 @@ def decrypt_data_key(data_key_encrypted, key_client, encrypt_option):
 def decrypt_file(client_name, filename):
     encrypted_path = 'encrypted/' + client_name
     decrypted_path = 'download/' + client_name
+    identificador = filename.replace('.', '_')
     if coleccionFicheros.find_one({"path": encrypted_path + "/" + filename}) is None:
-       key_client = coleccionUsuarios.find_one({"correo": client_name})['shared_key'] 
+       key_client = coleccionUsuarios.find_one({"correo": client_name})['shared_key'+identificador] 
        data_key_encrypted = coleccionFicheros.find_one({"path2": encrypted_path + "/" + filename})['datakey'] 
        encrypt_option = coleccionFicheros.find_one({"path2": encrypted_path + "/" + filename})['tipo_enc']
     elif coleccionFicheros.find_one({"path": encrypted_path + "/" + filename}) is not None and coleccionFicheros.find_one({"path": encrypted_path + "/" + filename}).get('compartido'):
-        key_client = coleccionUsuarios.find_one({"correo": client_name})['shared_key']
+        key_client = coleccionUsuarios.find_one({"correo": client_name})['shared_key' + identificador]
         data_key_encrypted = coleccionFicheros.find_one({"path": encrypted_path + "/" + filename})['datakey']
         encrypt_option = coleccionFicheros.find_one({"path": encrypted_path + "/" + filename})['tipo_enc']
     else:
@@ -219,7 +220,7 @@ def key_rotation(client_name):
 
         return resultado
     
-def create_shared_key(client_name, compartido):
+def create_shared_key(client_name, compartido, filename):
     password1 = key_client = coleccionUsuarios.find_one({"correo": client_name})['password']
     password2 = key_client = coleccionUsuarios.find_one({"correo": compartido})['password']
     
@@ -231,8 +232,12 @@ def create_shared_key(client_name, compartido):
     salt = binascii.unhexlify('aaef2d3f4d77ac66e9c5a6c3d8f921d1')
     passwordTmp = password_shared.encode("utf8")
     key = pbkdf2_hmac("sha256", passwordTmp, salt, 50000, 32)
+    
+    filename = filename.replace('.', '_')
+    
+    identificador = "shared_key" + filename
 
-    dato = {"$set": {"shared_key": binascii.hexlify(key)}}
+    dato = {"$set": {identificador: binascii.hexlify(key)}}
     coleccionUsuarios.update_one({"correo": client_name}, dato)
     coleccionUsuarios.update_one({"correo": compartido}, dato)
     return binascii.hexlify(key)        

@@ -59,7 +59,8 @@
 		        fd.append('fichero',files);
 		        fd.append('compartido', compartido)
 				fd.append('opcionEnc', opcionEnc);
-
+				
+				
 		        $.ajax({
 		            url: '/precargar',
 		            type: 'post',
@@ -71,7 +72,7 @@
 							console.log(response);
 							alert("Fichero cargado correctamente");
 							$('#formFichero').trigger("reset");
-		                }else{
+		                }else{		                	
 		                	alert("Error al cargar el fichero");
 		                }
 		            },

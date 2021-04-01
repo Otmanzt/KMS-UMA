@@ -47,16 +47,23 @@ def iniciar_sesion(request):
 def subir_fichero(request):
     fichero = request.files['fichero']
     opcionEnc = request.form["opcionEnc"]
-    print(request.form['compartido'])
     if request.form['compartido'] == "":
         encrypt_file(session["usuario"], fichero, int(opcionEnc), "")
-    else:
-        encrypt_file(session["usuario"], fichero, int(opcionEnc), request.form['compartido'])
-    response = {
+        response = {
         "estado": True,
         "fichero": fichero.filename,
         "opcionEnc": request.form["opcionEnc"]
-    }
+        }
+    else:        
+        if coleccionUsuarios.find_one({"correo": request.form['compartido']}):
+           encrypt_file(session["usuario"], fichero, int(opcionEnc), request.form['compartido']) 
+           response = {
+            "estado": True,
+            "fichero": fichero.filename,
+            "opcionEnc": request.form["opcionEnc"]
+            } 
+        else:
+            response=0                     
 
     response = json.dumps(response)
     return response

@@ -49,10 +49,9 @@ def agregar():
 @app.route('/precargar', methods=['POST', 'GET'])
 def precargar():
     response = {"estado": False}
-
+ 
     if request.files:
         response = subir_fichero(request)
-
     return response
 
 
