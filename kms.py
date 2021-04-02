@@ -1,15 +1,11 @@
-#https://mkyong.com/python/python-how-to-list-all-files-in-a-directory/
-#https://docs.python.org/3/tutorial/inputoutput.html#reading-and-writing-files
-#https://stackoverflow.com/questions/1035340/reading-binary-file-and-looping-over-each-byte
-
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms
 from cryptography.hazmat.backends import default_backend
 from cryptography.fernet import Fernet
 import os
 import shutil
 import base64
+import random
 import pymongo as pymongo
-
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives import hashes
 import os, binascii
@@ -38,7 +34,12 @@ def convert_key(shared_key):
 
 def encrypt_data_key(key_client, filename, encrypt_option):
 
-    salt = binascii.unhexlify('aaef2d3f4d77ac66e9c5a6c3d8f921d1')
+    hexadecimal = "0123456789abcdef"
+    saltChar=""
+    for i in range(32):
+        saltChar=saltChar+random.choice(hexadecimal)
+    salt = binascii.unhexlify(saltChar)
+    
     password = filename.encode("utf8")
     key = pbkdf2_hmac("sha256", password, salt, 50000, 32)
 
@@ -195,7 +196,12 @@ def key_rotation(client_name):
     oldKeyClient = coleccionUsuarios.find_one({"correo": client_name})['key']
     password = coleccionUsuarios.find_one({"correo": client_name})['password']
 
-    salt = binascii.unhexlify('aaef2d3f4d77ac66e9c5a6c3d8f921d1')
+    hexadecimal = "0123456789abcdef"
+    saltChar=""
+    for i in range(32):
+        saltChar=saltChar+random.choice(hexadecimal)
+    salt = binascii.unhexlify(saltChar)
+
     passwordTmp = password.encode("utf8")
     newKeyClient = pbkdf2_hmac("sha256", passwordTmp, salt, 50000, 32)
 
@@ -268,7 +274,12 @@ def create_shared_key(client_name, compartido, filename):
     hashed_password = hashlib.new("sha1", password_shared.encode())
 
     # Crea la key_client compartida para guardarla en los dos usuarios.
-    salt = binascii.unhexlify('aaef2d3f4d77ac66e9c5a6c3d8f921d1')
+    hexadecimal = "0123456789abcdef"
+    saltChar=""
+    for i in range(32):
+        saltChar=saltChar+random.choice(hexadecimal)
+    salt = binascii.unhexlify(saltChar)
+
     passwordTmp = password_shared.encode("utf8")
     key = pbkdf2_hmac("sha256", passwordTmp, salt, 50000, 32)
     

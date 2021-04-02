@@ -1,5 +1,6 @@
 import pymongo as pymongo
 import hashlib
+import random
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives import hashes
 import os, binascii
@@ -15,7 +16,12 @@ def insertar_usuario(correo, password):
     hashed_password = hashlib.new("sha1", password.encode())
 
     #Crea la key_client para guardarla con el usuario a crear.
-    salt = binascii.unhexlify('aaef2d3f4d77ac66e9c5a6c3d8f921d1')
+    hexadecimal = "0123456789abcdef"
+    saltChar=""
+    for i in range(32):
+        saltChar=saltChar+random.choice(hexadecimal)
+    salt = binascii.unhexlify(saltChar)
+
     passwordTmp = password.encode("utf8")
     key = pbkdf2_hmac("sha256", passwordTmp, salt, 50000, 32)
 
