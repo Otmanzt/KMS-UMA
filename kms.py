@@ -14,12 +14,14 @@ from Crypto.Cipher import AES
 from datetime import datetime
 import hashlib
 
+#Variables que necesitamos para conectarnos a la BBDD y acceder a ela.
 client = pymongo.MongoClient("mongodb+srv://spea:grupodetres@cluster0.uscnp.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
 db = client['ServerFiles']
 coleccionUsuarios = db['Usuarios']
 coleccionFicheros = db['Ficheros']
 nonce = bytes("0123456789012345",'utf-8')
 
+#Se encarga de convertir la clave en otro formato ya que dependiendo de donde la usemos la necesitamos de una manera u otra.
 def convert_key(shared_key):
     derived_key = HKDF(
         algorithm=hashes.SHA256(),
@@ -32,6 +34,7 @@ def convert_key(shared_key):
 
     return key
 
+#Crea la clave del archivo para encriptarlo
 def encrypt_data_key(key_client, filename, encrypt_option):
 
     hexadecimal = "0123456789abcdef"
@@ -40,9 +43,11 @@ def encrypt_data_key(key_client, filename, encrypt_option):
         saltChar=saltChar+random.choice(hexadecimal)
     salt = binascii.unhexlify(saltChar)
     
+    #Creamos una data key con la contraseña del usuario
     password = filename.encode("utf8")
     key = pbkdf2_hmac("sha256", password, salt, 50000, 32)
 
+    #Dependiendo del formato de encriptación, usamos fernet o AHEAD para encriptar la clave del archivo con la clave del cliente
     if encrypt_option == 0:
         f = Fernet(convert_key(key_client))
         return f.encrypt(key), key
@@ -75,8 +80,10 @@ def encrypt_file(client_name, fichero, encrypt_option, compartido):
     with open(upload_path, "rb") as file:
         file_contents = file.read()
             
+    #Obtenemos la clave del archivo.
     data_key_encrypted, data_key_plaintext = encrypt_data_key(key_client, upload_path, encrypt_option)
 
+    #Encriptamos archivo con el formato de encriptación elegido.
     if encrypt_option == 0:
         f = Fernet(convert_key(data_key_plaintext))
         file_contents_encrypted = f.encrypt(file_contents)
@@ -87,6 +94,7 @@ def encrypt_file(client_name, fichero, encrypt_option, compartido):
         cipher = AES.new(key_aes, AES.MODE_GCM, nonce=nonce)
         file_contents_encrypted = cipher.encrypt(file_contents) 
 
+    #Guardamos el archivo en el directorio del usuario.
     os.makedirs(encrypted_path, exist_ok=True)
     if compartido != "":
         os.makedirs(encrypted_path2, exist_ok=True)
