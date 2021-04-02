@@ -73,9 +73,12 @@ def descargar():
 
 @app.route('/borradoSeguro/<id>', methods=['POST', 'GET'])
 def borrar(id):
+    # Extraemos el path del fichero guardado en la BD
     path = borrar_fichero_BD(id)
+    # Usando la libreria secure_delete efectuamos el borrado seguro del fichero
     secure_delete.secure_random_seed_init()
     secure_delete.secure_delete(path)
+    # Volvemos a calcular la lista de ficheros del usuario
     datos = listar_ficheros()
     return render_template('listar.html', datos=datos)
 

@@ -54,19 +54,26 @@ def encrypt_data_key(key_client, filename, encrypt_option):
         return encrypted_message, key
 
 def encrypt_file(client_name, fichero, encrypt_option, compartido):
+    # Si compartido no esta vacio, el fichero esta compartido entre algunos usuarios
     if compartido != "":
+        # Creamos una nueva key compartida para dicho fichero
         key_client = create_shared_key(client_name, compartido, fichero.filename)
     else:
+        # No hay comparticion, se extrae la key del usuario guardada en BD
         key_client = coleccionUsuarios.find_one({"correo": client_name})['key']
+    
+    # Extraemos el nombre del fichero para crear la nueva ruta donde va a estar encriptado    
     filename = fichero.filename
     upload_path = 'upload/' + filename
     fichero.save(upload_path)
     encrypted_path = 'encrypted/' + client_name
+    # Creamos una segunda ruta para el caso de fichero compartido
     encrypted_path2 = 'encrypted/' + compartido
-
+    
+    # Leemos el contenido del fichero
     with open(upload_path, "rb") as file:
         file_contents = file.read()
-
+            
     data_key_encrypted, data_key_plaintext = encrypt_data_key(key_client, upload_path, encrypt_option)
 
     if encrypt_option == 0:
@@ -85,20 +92,30 @@ def encrypt_file(client_name, fichero, encrypt_option, compartido):
 
     with open(encrypted_path + '/' + filename, 'wb') as file_encrypted:
         file_encrypted.write(file_contents_encrypted)
-        
+    
+    # Si hay comparticion efectuamos la encriptacion en la segunda ruta creada    
     if compartido != "":
         with open(encrypted_path2 + '/' + filename, 'wb') as file_encrypted:
             file_encrypted.write(file_contents_encrypted) 
-           
+    
+    # Borramos el archivo de la carpeta upload       
     os.remove(upload_path)
     fecha_subida = datetime.today()
-
+    
+    # Borramos todos los posibles ficheros con la misma ruta para evitar conflictos
     coleccionFicheros.delete_many({"path": encrypted_path + '/' + filename})
+    
+    # Si existe comparticion, borramos tambien los posibles ficheros con la segunda ruta
     if compartido != "":
         coleccionFicheros.delete_many({"path": encrypted_path2 + '/' + filename})
+        # Dato a insertar con la ruta, data_key, fecha de subida, nombre del fichero, tipo de encriptacion
+        # Introducimos la segunda ruta en el dato a insertar y un campo de con quien se esta compartiendo
         fileToUpload = {"client": client_name, "datakey": data_key_encrypted, "path": encrypted_path + '/' + filename,"path2": encrypted_path2 + '/' + filename, "fecha_subida": fecha_subida, "nombre": filename, "tipo_enc": encrypt_option, "compartido": compartido}
     else:
+        # Dato a insertar con la ruta, data_key, fecha de subida, nombre del fichero, tipo de encriptacion
         fileToUpload = {"client": client_name, "datakey": data_key_encrypted, "path": encrypted_path + '/' + filename, "fecha_subida": fecha_subida, "nombre": filename, "tipo_enc": encrypt_option}
+    
+    # Insercion en la BD del dato anterior
     coleccionFicheros.insert_one(fileToUpload)
 
 def decrypt_data_key(data_key_encrypted, key_client, encrypt_option):
@@ -116,23 +133,42 @@ def decrypt_data_key(data_key_encrypted, key_client, encrypt_option):
 def decrypt_file(client_name, filename):
     encrypted_path = 'encrypted/' + client_name
     decrypted_path = 'download/' + client_name
+    
+    # Volvemos a reemplazar el punto por _ puesto que asi se guarda en la base de datos las claves de los ficheros compartidos
     identificador = filename.replace('.', '_')
+    
+    # Si no existe el path con el nombre del usuario, es el usuario con el que esta compartido el fichero
     if coleccionFicheros.find_one({"path": encrypted_path + "/" + filename}) is None:
+       # Sacamos la shared_key del fichero
        key_client = coleccionUsuarios.find_one({"correo": client_name})['shared_key'+identificador] 
+       # Extraemos el data_key_ecrypted usando el path2 ya que no es el usuario principal
        data_key_encrypted = coleccionFicheros.find_one({"path2": encrypted_path + "/" + filename})['datakey'] 
+       # Finalmente extraemos el tipo de encriptacion
        encrypt_option = coleccionFicheros.find_one({"path2": encrypted_path + "/" + filename})['tipo_enc']
+    
+    # Si existe el path con el nombre del usuario y el campo compartido del fichero existe, es el usuario principal   
     elif coleccionFicheros.find_one({"path": encrypted_path + "/" + filename}) is not None and coleccionFicheros.find_one({"path": encrypted_path + "/" + filename}).get('compartido'):
+        # Extraemos la shared_key del fichero
         key_client = coleccionUsuarios.find_one({"correo": client_name})['shared_key' + identificador]
+        # Extraemos el data_key_encrypted ahora usando el path puesto que es el usuario principal
         data_key_encrypted = coleccionFicheros.find_one({"path": encrypted_path + "/" + filename})['datakey']
+        # Finalmente extraemos el tipo de encriptacion
         encrypt_option = coleccionFicheros.find_one({"path": encrypted_path + "/" + filename})['tipo_enc']
+    
+    # En otro caso el fichero no esta compartido
     else:
+        # Extraemos la key del cliente
         key_client = coleccionUsuarios.find_one({"correo": client_name})['key'] 
+        # Extraemos el data_key_ecrypted
         data_key_encrypted = coleccionFicheros.find_one({"path": encrypted_path + "/" + filename})['datakey']
+        # Finalmente extraemos el tipo de encriptacion
         encrypt_option = coleccionFicheros.find_one({"path": encrypted_path + "/" + filename})['tipo_enc']
-
+    
+    # Leemos el contenido del fichero encriptado
     with open(encrypted_path + '/' + filename, "rb") as file:
         file_contents = file.read()
 
+    
     data_key_plaintext = decrypt_data_key(data_key_encrypted, key_client, encrypt_option)
 
     if encrypt_option == 0:
@@ -221,22 +257,27 @@ def key_rotation(client_name):
         return resultado
     
 def create_shared_key(client_name, compartido, filename):
+    # Extraemos las dos passwords de los dos usuarios que van a compartir el fichero
     password1 = key_client = coleccionUsuarios.find_one({"correo": client_name})['password']
     password2 = key_client = coleccionUsuarios.find_one({"correo": compartido})['password']
     
+    # Concatenamos las password
     password_shared = password1 + password2
     
+    # Calculamos su hash
     hashed_password = hashlib.new("sha1", password_shared.encode())
 
-    #Crea la key_client para guardarla con el usuario a crear.
+    # Crea la key_client compartida para guardarla en los dos usuarios.
     salt = binascii.unhexlify('aaef2d3f4d77ac66e9c5a6c3d8f921d1')
     passwordTmp = password_shared.encode("utf8")
     key = pbkdf2_hmac("sha256", passwordTmp, salt, 50000, 32)
     
+    # Reemplazamos los puntos por _ para diferenciar las shared_key de cada fichero
     filename = filename.replace('.', '_')
     
     identificador = "shared_key" + filename
-
+    
+    # Actualizamos los dos usuarios introduciendo la nueva clave compartida de dicho fichero
     dato = {"$set": {identificador: binascii.hexlify(key)}}
     coleccionUsuarios.update_one({"correo": client_name}, dato)
     coleccionUsuarios.update_one({"correo": compartido}, dato)

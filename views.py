@@ -47,6 +47,8 @@ def iniciar_sesion(request):
 def subir_fichero(request):
     fichero = request.files['fichero']
     opcionEnc = request.form["opcionEnc"]
+    
+    # Si el campo compartido esta vacio, no hay comparticion
     if request.form['compartido'] == "":
         encrypt_file(session["usuario"], fichero, int(opcionEnc), "")
         response = {
@@ -54,15 +56,21 @@ def subir_fichero(request):
         "fichero": fichero.filename,
         "opcionEnc": request.form["opcionEnc"]
         }
-    else:        
+    else:   
+        # Si no esta vaciio, se comprueba en la base de datos si existe el usuario con el que se quiere compartir     
         if coleccionUsuarios.find_one({"correo": request.form['compartido']}):
+        # EXISTE
+           # Llamamos a encriptar el fichero con los dos usuarios
            encrypt_file(session["usuario"], fichero, int(opcionEnc), request.form['compartido']) 
            response = {
             "estado": True,
             "fichero": fichero.filename,
             "opcionEnc": request.form["opcionEnc"]
             } 
+        
+        # NO EXISTE   
         else:
+            # Devolvemos response 0 para que salte la alerta de error
             response=0                     
 
     response = json.dumps(response)
@@ -85,7 +93,10 @@ def descargar_fichero(fichero, enctype):
     return response
 
 def borrar_fichero_BD(id):
+    # Convertimos el id a object id para poder buscar en MongoDB por Id
     id = ObjectId(id)
+    # Extraemos el path para luego efectuar un borrado seguro
     path = coleccionFicheros.find_one({"_id": id})['path']
+    # Eliminamos el fichero de la BD
     coleccionFicheros.delete_one({"_id": id})    
     return path
