@@ -43,7 +43,7 @@ def iniciar_sesion(request):
 
     return datos
 
-
+# Se lee el tipo de ENC seleccionada en el formulario y el fichero a subir. Despues se le pasa a la funcion encrypt_file del KMS
 def subir_fichero(request):
     fichero = request.files['fichero']
     opcionEnc = request.form["opcionEnc"]

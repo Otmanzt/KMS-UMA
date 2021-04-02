@@ -11,12 +11,12 @@ app.secret_key = 'BQ2S5Idd4C'
 def index():
     return render_template('index.html')
 
-@app.route('/salir')
+@app.route('/salir') #Se liberan las variables de sesion para cerrar la sesion del cliente
 def salir():
     session.clear()
     return render_template('index.html')
 
-@app.route('/iniciarSesion', methods=["GET", "POST"])
+@app.route('/iniciarSesion', methods=["GET", "POST"]) # Se llama a iniciar sesion en views.py
 def iniciarSesion():
     datos = {}
     if request.form:
@@ -28,7 +28,7 @@ def iniciarSesion():
     return render_template('iniciar_sesion.html', datos=datos)
 
 
-@app.route('/registrar', methods=["GET", "POST"])
+@app.route('/registrar', methods=["GET", "POST"]) # Se recogen los datos del formulario de registro y se envia la request a registrar_usuario. Si se completa el registro se redirige a index.
 def registrar():
     datos = {}
 
@@ -46,7 +46,7 @@ def agregar():
     return render_template('agregar.html')
 
 
-@app.route('/precargar', methods=['POST', 'GET'])
+@app.route('/precargar', methods=['POST', 'GET']) #Evento AJAX para coger el fichero y hacer las pertinentes operaciones en el KMS
 def precargar():
     response = {"estado": False}
  
@@ -61,7 +61,7 @@ def listar():
     return render_template('listar.html', datos=datos)
 
 
-@app.route('/descargar', methods=['POST', 'GET'])
+@app.route('/descargar', methods=['POST', 'GET']) # Se hace una peticion AJAX para desencriptar el fichero correspondiente y se devuelve el enlace para mostrarlo por pantalla
 def descargar():
     response = {"estado": False}
 
@@ -88,7 +88,7 @@ def rotar():
     return render_template('rotar.html')
 
 
-@app.route('/confirmarRotar', methods=['POST', 'GET'])
+@app.route('/confirmarRotar', methods=['POST', 'GET']) # Se llama a la funcion de key_rotation del KMS directamente pasando el ID del usuario
 def confirmarRotar():
     response = {"estado": False}
 
