@@ -127,6 +127,7 @@ def encrypt_file(client_name, fichero, encrypt_option, compartido):
     # Insercion en la BD del dato anterior
     coleccionFicheros.insert_one(fileToUpload)
 
+#Devuelve la data key desencriptada sabiendo la key del cliente, la data key encriptada y el método de desencriptación.
 def decrypt_data_key(data_key_encrypted, key_client, encrypt_option):
 
     if encrypt_option == 0:
@@ -139,6 +140,7 @@ def decrypt_data_key(data_key_encrypted, key_client, encrypt_option):
         cipher = AES.new(key_aes, AES.MODE_GCM, nonce=nonce)
         return cipher.decrypt(data_key_encrypted)
 
+#Desencripta un fichero.
 def decrypt_file(client_name, filename):
     encrypted_path = 'encrypted/' + client_name
     decrypted_path = 'download/' + client_name
@@ -177,9 +179,10 @@ def decrypt_file(client_name, filename):
     with open(encrypted_path + '/' + filename, "rb") as file:
         file_contents = file.read()
 
-    
+    #Obtenemos la data key para desencriptarlo.
     data_key_plaintext = decrypt_data_key(data_key_encrypted, key_client, encrypt_option)
 
+    #Desencriptamos el fichero con la clave.
     if encrypt_option == 0:
         f = Fernet(convert_key(data_key_plaintext))
         file_contents_decrypted = f.decrypt(file_contents)
@@ -190,20 +193,26 @@ def decrypt_file(client_name, filename):
         cipher = AES.new(key_aes, AES.MODE_GCM, nonce=nonce)
         file_contents_decrypted = cipher.decrypt(file_contents)
 
+    #Creamos la ruta para guardar el fichero desencriptado
     os.makedirs(decrypted_path, exist_ok=True)
 
+    #Guarda el archivo desencriptado.
     with open(decrypted_path + '/' + filename, 'wb') as file_decrypted:
         file_decrypted.write(file_contents_decrypted)
 
     ruta = decrypted_path + '/' + filename
 
+    #Devolvemos la ruta en la que se ha guardado el archivo desencriptado.
     return ruta
 
+#Crea una key client nueva para un cliente y cambiar las data keys de los ficheros con la nueva key client.
 def key_rotation(client_name):
 
+    #Obtenemos la password y la key client antigua del cliente
     oldKeyClient = coleccionUsuarios.find_one({"correo": client_name})['key']
     password = coleccionUsuarios.find_one({"correo": client_name})['password']
 
+    #Creamos una key client nueva aleatoria
     hexadecimal = "0123456789abcdef"
     saltChar=""
     for i in range(32):
@@ -213,22 +222,28 @@ def key_rotation(client_name):
     passwordTmp = password.encode("utf8")
     newKeyClient = pbkdf2_hmac("sha256", passwordTmp, salt, 50000, 32)
 
+    #Guardamos la clave del cliente nueva.
     coleccionUsuarios.update_one({"correo": client_name},{"$set": {"key": newKeyClient}})
 
     encrypted_path = 'encrypted/' + client_name
     keyrotation_path = 'keyrotation/' + client_name
     file_contents_decrypted = None
 
+    #Por cada fichero encriptado del usuario...
     for filename in os.listdir(encrypted_path):
 
+        #Obtenemos la data key encriptada actual y la opcion de encriptación usada.
         data_key_encrypted = coleccionFicheros.find_one({"path": encrypted_path + "/" + filename})['datakey']
         encrypt_option = coleccionFicheros.find_one({"path": encrypted_path + "/" + filename})['tipo_enc']
 
+        #Abrimos el archivo
         with open(encrypted_path + '/' + filename, "rb") as file:
             file_contents = file.read()
       
+        #Desencriptamos la data key.
         data_key_plaintext = decrypt_data_key(data_key_encrypted, oldKeyClient, encrypt_option)
 
+        #Desencriptamos el archivo
         if encrypt_option == 0:
             f = Fernet(convert_key(data_key_plaintext))
             file_contents_decrypted = f.decrypt(file_contents)
@@ -239,18 +254,24 @@ def key_rotation(client_name):
             cipher = AES.new(key_aes, AES.MODE_GCM, nonce=nonce)
             file_contents_decrypted = cipher.decrypt(file_contents)
         
+        #Lo guardamos en un directorio especifico para hacer la rotación de clave
         os.makedirs(keyrotation_path, exist_ok=True)
 
+        #Guardamos el archivo desencriptado en el directorio especifico.
         with open(keyrotation_path + '/' + filename, 'wb') as file_decrypted:
             file_decrypted.write(file_contents_decrypted)
 
+        #Borramos el archivo encriptado con la data key antigua.
         os.remove(encrypted_path + '/' + filename)
 
+        #Abrimos el archivo desencriptado
         with open(keyrotation_path + '/' + filename, "rb") as file:
             file_contents = file.read()
         
+        #Creamos una data key nueva con la client key nueva.
         data_key_encrypted, data_key_plaintext = encrypt_data_key(newKeyClient, keyrotation_path, encrypt_option)
 
+        #Encriptamos el archivo con el mismo método que tenía antes, pero con la data key nueva.
         if encrypt_option == 0:
             f = Fernet(convert_key(data_key_plaintext))
             file_contents_encrypted = f.encrypt(file_contents)
@@ -261,11 +282,14 @@ def key_rotation(client_name):
             cipher = AES.new(key_aes, AES.MODE_GCM, nonce=nonce)
             file_contents_encrypted = cipher.encrypt(file_contents) 
 
+        #Guardamos el archivo en la carpeta de ficheros encriptados del usuario
         with open(encrypted_path + '/' + filename, 'wb') as file_encrypted:
             file_encrypted.write(file_contents_encrypted)
         
+        #Borramos el archivo del directorio especifico para hacer la rotación.
         os.remove(keyrotation_path + '/' + filename)
 
+        #Actualizamos la data key nueva encriptada con la client key nueva en la base de datos.
         resultado = coleccionFicheros.update_one({"path": encrypted_path + "/" + filename},{"$set": {"datakey": data_key_encrypted}})
 
         return resultado
